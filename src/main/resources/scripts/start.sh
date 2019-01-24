@@ -34,9 +34,9 @@ function start_load() {
     curl http://127.0.0.1:$port/load
 }
 
-function start_hello() {
+function start_qps() {
     port=$1
-    ab -c 100 -n 10000 http://127.0.0.1:$port/duration
+    ab -c 100 -n 10000 http://127.0.0.1:$port/qps
 }
 
 function start_base() {
@@ -71,7 +71,7 @@ function start_bench() {
     fi
 
     docker_name="jdk-bench-${name}"
-    for api in (base hello load); do
+    for api in (bench hello load); do
         restart_server $docker_name $port
         start_${api} $port
     done
