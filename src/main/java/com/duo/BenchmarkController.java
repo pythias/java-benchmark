@@ -13,8 +13,13 @@ import java.util.Random;
 @RestController
 public class BenchmarkController {
 
-    @RequestMapping("/duration")
-    public String duration() {
+    @RequestMapping("/health")
+    public String health() {
+        return "OK";
+    }
+
+    @RequestMapping("/hello")
+    public String hello() {
         return "Hello World!";
     }
 
