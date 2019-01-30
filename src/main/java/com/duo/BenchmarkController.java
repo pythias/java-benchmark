@@ -1,7 +1,6 @@
 package com.duo;
 
 import com.duo.benchmark.Base;
-import com.duo.benchmark.Fibonacci;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.RegexPatternTypeFilter;
@@ -23,12 +22,13 @@ public class BenchmarkController {
     }
 
     @RequestMapping("/qps")
-    public String qps() {
-        return "Hello World!";
+    public long qps() {
+        return System.nanoTime();
     }
 
     @RequestMapping("/bench")
     public Map<String, Long> bench() {
+        long sum = 0;
         Map<String, Long> results = new HashMap<>();
 
         final ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
@@ -42,12 +42,15 @@ public class BenchmarkController {
             try {
                 final Class<?> benchClass = Class.forName(bean.getBeanClassName());
                 Base bench = (Base)benchClass.newInstance();
-                results.put(bean.getBeanClassName().substring(18).toLowerCase(), bench.bench());
+                long r = bench.bench();
+                results.put(bean.getBeanClassName().substring(18).toLowerCase(), r);
+                sum += r;
             } catch (Exception ex) {
-
+                
             }
         }
 
+        results.put("sum", sum);
         return results;
     }
 
@@ -57,8 +60,8 @@ public class BenchmarkController {
 
         Random random = new Random();
 
-        for(int i = 0; i < 1000; i++) {
-            long[] data = new long[1000000];
+        for(int i = 0; i < 400; i++) {
+            long[] data = new long[1_000_000];
             for(int l = 0; l < data.length; l++) {
                 data[l] = random.nextLong();
             }

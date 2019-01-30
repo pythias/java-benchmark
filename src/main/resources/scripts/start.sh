@@ -14,9 +14,22 @@ function build_docker() {
     port=$2
 
     echo "Building JDK:${docker_name}"
+    docker container stop ${docker_name}
+    docker rm ${docker_name}
+    docker rmi ${docker_name}
     docker build -t ${docker_name} -f Dockerfile .
     docker run -d --name ${docker_name} -p ${port}:8080 ${docker_name}
     echo "Builded JDK:${docker_name}"
+}
+
+function install_prometheus() {
+    mkdir -p /data1/opdir/etc/
+    mkdir -p /data1/opdir/var/data/prometheus
+
+    \cp prometheus.yml /data1/opdir/etc/prometheus.yml
+
+    docker run -d --name=grafana -p 3000:3000 grafana/grafana
+    docker run -d --name=prometheus -p 9090:9090 -m 500M -v /data1/opdir/etc/prometheus.yml:/prometheus.yml -v /data1/opdir/var/data/prometheus:/data prom/prometheus --config.file=/prometheus.yml --log.level=info
 }
 
 function install() {
@@ -31,38 +44,52 @@ function install() {
 
 function start_load() {
     port=$1
-    curl http://127.0.0.1:$port/load
+    result=$(curl -s http://127.0.0.1:${port}/load)
+    echo "RESULT:load ${result}"
 }
 
 function start_qps() {
     port=$1
-    ab -c 100 -n 10000 http://127.0.0.1:$port/qps
+    result=$(ab -c 100 -n 10000 http://127.0.0.1:${port}/qps | grep "Requests per second:" | awk '{print $4}')
+    echo "RESULT:qps ${result}"
 }
 
-function start_base() {
+function start_bench() {
     port=$1
-    curl http://127.0.0.1:$port/base
+    result=$(curl -s http://127.0.0.1:${port}/bench)
+    echo "RESULT:bench ${result}"
 }
 
 function restart_server() {
-    docker_name=$1
+    docker_name="jdk-bench-$1"
     port=$2
 
-    docker stop ${docker_name}
-    docker run -d --name ${docker_name} -p ${port}:8080 ${docker_name}
+    result=$(docker container stop ${docker_name})
+    if [[ $result != ${docker_name} ]]; then
+        echo ${result}
+        exit 0
+    fi
+
+    result=$(docker container start ${docker_name})
+    if [[ $result != ${docker_name} ]]; then
+        echo ${result}
+        exit 0
+    fi
+
     while :; do
-        health=$(curl http://127.0.0.1:${port}/health)
-        if [[ $health = "OK"]]; then
+        health=$(curl -s http://127.0.0.1:${port}/health)
+        if [[ $health = "OK" ]]; then
             break
         fi
 
         sleep 1
     done
 
-    echo "${docker_name}:${port} started"
+    times=$(docker logs ${docker_name} | grep "Started BenchApplication" | awk '{print $13 "," substr($18,0,length($18)-1)}')
+    echo "${docker_name},${times}"
 }
 
-function start_bench() {
+function bench() {
     name=$1
     port=$(printf -- '%s\n' ${JDKS[*]} | grep ",${name}," | cut -d',' -f3)
     if [[ -x $port ]]; then
@@ -70,10 +97,23 @@ function start_bench() {
         exit 0
     fi
 
-    docker_name="jdk-bench-${name}"
-    for api in (bench hello load); do
-        restart_server $docker_name $port
+    for api in bench qps load; do
+        echo "${name} ${api} started"
+        restart_server $name $port
         start_${api} $port
+    done
+}
+
+function bench_all() {
+    for jdk in "${JDKS[@]}" ; do
+        name=$(echo $jdk | cut -d',' -f2)
+        port=$(echo $jdk | cut -d',' -f3)
+
+        for api in bench qps load; do
+            echo "${name} ${api} started"
+            restart_server $name $port
+            start_${api} $port
+        done
     done
 }
 
@@ -81,7 +121,8 @@ function show_help() {
     echo "JDK 性能压力测试脚本。
 用法： start.sh [选项]...
   -h, --help 显示帮助
-  -b, --bench 开始执行脚本
+  -b, --bench 开始执行指定脚本
+  -a, --bench_all 开始执行所有脚本
   -i, --install 初始化Docker列表
 "
 }
@@ -98,7 +139,10 @@ while :; do
             exit
             ;;
         -b|--bench)
-            start_bench $2
+            bench $2
+            ;;
+        -a|--bench_all)
+            bench_all
             ;;
         -i|--install)
             install
