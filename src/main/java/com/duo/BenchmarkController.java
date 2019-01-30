@@ -46,7 +46,7 @@ public class BenchmarkController {
                 results.put(bean.getBeanClassName().substring(18).toLowerCase(), r);
                 sum += r;
             } catch (Exception ex) {
-                
+
             }
         }
 
