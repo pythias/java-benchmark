@@ -27,9 +27,9 @@ public class BenchmarkController {
     }
 
     @RequestMapping("/bench")
-    public Map<String, Long> bench() {
+    public Map<String, Map<String, Double>> bench() {
         long sum = 0;
-        Map<String, Long> results = new HashMap<>();
+        Map<String, Map<String, Double>> results = new HashMap<>();
 
         final ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
         provider.addIncludeFilter(new RegexPatternTypeFilter(Pattern.compile("com.duo.benchmark.*")));
@@ -42,15 +42,17 @@ public class BenchmarkController {
             try {
                 final Class<?> benchClass = Class.forName(bean.getBeanClassName());
                 Base bench = (Base)benchClass.newInstance();
-                long r = bench.bench();
-                results.put(bean.getBeanClassName().substring(18).toLowerCase(), r);
-                sum += r;
+                long nanoTime = bench.bench();
+                long count = bench.getCount();
+                Map<String, Double> result = new HashMap<>();
+                result.put("time", nanoTime / 1_000.0);
+                result.put("qps", count / (nanoTime / 1_000_000.0));
+                results.put(bean.getBeanClassName().substring(18).toLowerCase(), result);
             } catch (Exception ex) {
 
             }
         }
 
-        results.put("sum", sum);
         return results;
     }
 

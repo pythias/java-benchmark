@@ -17,4 +17,9 @@ public class Fibonacci extends Base {
     protected void run() {
         fib(count);
     }
+
+    @Override
+    public long getCount() {
+        return this.count;
+    }
 }

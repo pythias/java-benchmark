@@ -13,4 +13,9 @@ public class SimpleCall extends Base {
             a.length();
         }
     }
+
+    @Override
+    public long getCount() {
+        return this.count;
+    }
 }

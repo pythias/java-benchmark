@@ -1,16 +1,15 @@
 package com.duo.benchmark;
 
 /**
- * Created by pythias on 2019/1/24.
+ * Created by pythias on 2019/3/4.
  */
-public class Simple extends Base {
+public class NanoTime extends Base {
     private long count = 1_000_000;
 
     @Override
     protected void run() {
-        int a = 0;
         for (int i = 0; i < count; i++) {
-            a++;
+            System.nanoTime();
         }
     }
 

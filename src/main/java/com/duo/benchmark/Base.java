@@ -8,4 +8,5 @@ public abstract class Base {
     }
 
     protected abstract void run();
+    public abstract long getCount();
 }

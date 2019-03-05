@@ -15,6 +15,11 @@ public class SimpleClassCall extends Base {
     }
 
     private void hello(String a) {
+        a.length();
+    }
 
+    @Override
+    public long getCount() {
+        return this.count;
     }
 }

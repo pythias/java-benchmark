@@ -1,18 +1,18 @@
 package com.duo.benchmark;
 
 /**
- * Created by pythias on 2019/1/24.
+ * Created by pythias on 2019/3/5.
  */
-public class StringCat extends Base {
+public class StringBuilder extends Base {
     private long count = 200_000;
 
     @Override
     protected void run() {
-        String s = "";
+        java.lang.StringBuilder sb = new java.lang.StringBuilder();
         for (int i = 0; i < this.count; i++) {
-            s.concat("hello\n");
+            sb.append("hello\n");
         }
-        long l = s.length();
+        long l = sb.toString().length();
     }
 
     @Override
